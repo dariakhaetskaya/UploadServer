@@ -1,5 +1,7 @@
 package ru.nsu.fit.networks.lab2.client;
 
+import ru.nsu.fit.networks.lab2.smartstreams.*;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -25,11 +27,11 @@ public class Client implements Runnable {
         this.serverPort = serverPort;
     }
 
-    private void UploadFile(FileInputStream fileInputStream, BufferedOutputStream socketOutputStream) throws IOException {
+    private void UploadFile(FileInputStream fileInputStream, SmartOutputStream socketOutputStream) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
         int segmentSize;
         while ((segmentSize = fileInputStream.read(buffer)) != -1){
-            socketOutputStream.write(segmentSize);
+            socketOutputStream.writeInt(segmentSize);
             socketOutputStream.write(buffer);
         }
         socketOutputStream.flush();
@@ -38,17 +40,22 @@ public class Client implements Runnable {
     @Override
     public void run() {
         try(Socket socket = new Socket(serverIP, serverPort);
-            BufferedOutputStream socketOutputStream = new BufferedOutputStream(socket.getOutputStream());
+//            BufferedOutputStream socketOutputStream = new BufferedOutputStream(socket.getOutputStream());
+            SmartOutputStream socketOutputStream = new SmartOutputStream(socket.getOutputStream());
             FileInputStream fileInputStream = new FileInputStream(file);
-            DataInputStream socketInputStream = new DataInputStream(socket.getInputStream());
-            ){
+            SmartInputStream socketInputStream = new SmartInputStream(socket.getInputStream());){
+
             byte[] fileName = file.getName().getBytes(StandardCharsets.UTF_8);
-            socketOutputStream.write(fileName.length);
+//            byte[] fileNameSize = ByteBuffer.allocate(INT_SIZE_BYTES).putInt(fileName.length).array();
+//            socketOutputStream.write(fileNameSize);
             socketOutputStream.write(fileName);
+            socketOutputStream.writeInt(fileName.length);
+
 
             UploadFile(fileInputStream, socketOutputStream);
             fileInputStream.close();
             socket.shutdownOutput();
+            socketOutputStream.close();
 
             int transferStatus = socketInputStream.readInt();
             if (transferStatus == FILE_TRANSFER_FAILURE){
