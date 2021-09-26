@@ -1,6 +1,6 @@
 package ru.nsu.fit.networks.lab2.client;
 
-import ru.nsu.fit.networks.lab2.smartstreams.*;
+import ru.nsu.fit.networks.lab2.smartsocket.*;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -13,57 +13,70 @@ import java.nio.file.Paths;
 import static ru.nsu.fit.networks.lab2.util.Protocol.*;
 
 public class Client implements Runnable {
+    private final Path path;
     private final File file;
     private final InetAddress serverIP;
     private final int serverPort;
 
     public Client(String passedFileName, InetAddress serverIP, int serverPort) throws FileNotFoundException {
-        Path fileName = Paths.get(passedFileName);
-        if (!Files.exists(fileName)){
-            throw new FileNotFoundException("can't find " + fileName);
+        this.path = Paths.get(passedFileName);
+        if (!Files.exists(path)){
+            throw new FileNotFoundException("can't find " + path);
         }
-        file = new File(fileName.toUri());
+        file = new File(path.toUri());
         this.serverIP = serverIP;
         this.serverPort = serverPort;
     }
 
-    private void UploadFile(FileInputStream fileInputStream, SmartOutputStream socketOutputStream) throws IOException {
+    private void UploadFile(FileInputStream fileInputStream, MyOutputStream socketOutputStream) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
         int segmentSize;
-        while ((segmentSize = fileInputStream.read(buffer)) != -1){
-            socketOutputStream.writeInt(segmentSize);
-            socketOutputStream.write(buffer);
+        while ((segmentSize = fileInputStream.read(buffer, 0, BUFFER_SIZE)) != -1){
+//            socketOutputStream.writeInt(segmentSize);
+            socketOutputStream.send(buffer, segmentSize);
+            socketOutputStream.flush();
         }
-        socketOutputStream.flush();
+
     }
 
     @Override
     public void run() {
         try(Socket socket = new Socket(serverIP, serverPort);
-//            BufferedOutputStream socketOutputStream = new BufferedOutputStream(socket.getOutputStream());
-            SmartOutputStream socketOutputStream = new SmartOutputStream(socket.getOutputStream());
-            FileInputStream fileInputStream = new FileInputStream(file);
-            SmartInputStream socketInputStream = new SmartInputStream(socket.getInputStream());){
+            MyOutputStream outputSteam = new MyOutputStream(socket.getOutputStream());
+            MyInputStream inputStream = new MyInputStream(socket.getInputStream());
+            FileInputStream fileInputStream = new FileInputStream(file)){
 
-            byte[] fileName = file.getName().getBytes(StandardCharsets.UTF_8);
+            String fileName = file.getName();
 //            byte[] fileNameSize = ByteBuffer.allocate(INT_SIZE_BYTES).putInt(fileName.length).array();
-//            socketOutputStream.write(fileNameSize);
-            socketOutputStream.write(fileName);
-            socketOutputStream.writeInt(fileName.length);
+            outputSteam.sendInt(fileName.getBytes(StandardCharsets.UTF_8).length);
+            outputSteam.sendUTF(fileName);
+            System.out.println("sending: " + fileName);
 
-            UploadFile(fileInputStream, socketOutputStream);
-            fileInputStream.close();
-            socketOutputStream.close();
-            socket.shutdownOutput();
 
-            int transferStatus = socketInputStream.readInt();
+            if (inputStream.readInt() != SUCCESSFUL_FILENAME_TRANSFER){
+                System.err.println("Error transferring filename");
+                fileInputStream.close();
+                outputSteam.close();
+                socket.shutdownOutput();
+                return;
+            }
+
+            long fileSize = Files.size(path);
+            outputSteam.sendLong(fileSize);
+
+            UploadFile(fileInputStream, outputSteam);
+
+            int transferStatus = inputStream.readInt();
             if (transferStatus == FILE_TRANSFER_FAILURE){
                 System.out.println("FILE TRANSFER FAILED");
             } else if (transferStatus == SUCCESSFUL_FILE_TRANSFER) {
                 System.out.println("FILE TRANSFERRED SUCCESSFULLY");
             }
 
-            socketInputStream.close();
+//            fileInputStream.close();
+//            socketOutputStream.close();
+            socket.shutdownOutput();
+//            socketInputStream.close();
             socket.shutdownInput();
         } catch (IOException e) {
             e.printStackTrace();

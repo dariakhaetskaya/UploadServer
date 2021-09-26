@@ -2,7 +2,7 @@ package ru.nsu.fit.networks.lab2.server;
 
 import java.io.IOException;
 
-public class Main {
+public class ServerMain {
     public static void main(String[] args){
         if (args.length != 1){
             throw new IllegalArgumentException("Expected 1 argument : port. Got " + args.length);
