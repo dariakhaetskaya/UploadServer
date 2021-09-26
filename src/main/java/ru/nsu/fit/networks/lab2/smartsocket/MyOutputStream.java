@@ -20,14 +20,13 @@ public class MyOutputStream extends FilterOutputStream {
 
     public void send(byte[] input, int byteCount) throws IOException {
         if (input.length == byteCount){
-            this.write(input);
+            this.write(input, 0, byteCount);
             flush();
             return;
         }
-        byte[] buffer;
+        byte[] buffer = new byte[byteCount];;
         if (input.length < byteCount){
-            buffer = new byte[byteCount];
-            System.arraycopy(input, 0, buffer, byteCount - input.length, input.length);
+            System.arraycopy(input, 0, buffer, 0, input.length);
         } else {
             buffer = Arrays.copyOf(input, byteCount);
         }
@@ -44,13 +43,13 @@ public class MyOutputStream extends FilterOutputStream {
     public void sendInt(int num) throws IOException {
         byte[] buffer = ByteBuffer.allocate(INT_SIZE_BYTES).putInt(num).array();
         send(buffer, INT_SIZE_BYTES);
-        System.out.println("sending" + Arrays.toString(buffer));
+//        System.out.println("sending" + Arrays.toString(buffer));
         flush();
     }
 
     public void sendLong(long  num) throws IOException {
         byte[] buffer = ByteBuffer.allocate(LONG_SIZE_BYTES).putLong(num).array();
-        System.out.println("sending" + Arrays.toString(buffer));
+//        System.out.println("sending" + Arrays.toString(buffer));
         send(buffer, LONG_SIZE_BYTES);
 //        flush();
     }

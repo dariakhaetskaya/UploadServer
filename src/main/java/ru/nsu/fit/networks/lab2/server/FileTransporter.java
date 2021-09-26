@@ -60,6 +60,7 @@ public class FileTransporter implements Runnable {
             outputStream.flush();
 
             long fileSize = inputStream.readLong();
+            System.out.println("File size = " + fileSize);
             Path newFile = createFile(filename);
 
             try (OutputStream fileOutputStream = Files.newOutputStream(newFile)){
@@ -67,23 +68,31 @@ public class FileTransporter implements Runnable {
                 long uploadStartedTime = System.currentTimeMillis();
                 long lastSpeedMeasureTime = uploadStartedTime;
                 long currentTime = uploadStartedTime;
+                long readSinceLastTimeMeasure = 0;
                 byte[] buffer = new byte[BUFFER_SIZE];
-
+//                ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+                int i = 0;
                 while (totalBytesRead < fileSize){
-                    long bytesRead = inputStream.read(buffer);
-                    totalBytesRead += bytesRead;
-                    System.out.println(new String(buffer, StandardCharsets.UTF_8));
-                    if (bytesRead > 0){
-                        fileOutputStream.write(buffer);
+
+                    int segmentSize = inputStream.readInt();
+                    readSinceLastTimeMeasure += segmentSize;
+//                    System.out.println("got" + segmentSize + "bytes");
+                    inputStream.readFully(buffer,0, segmentSize);
+
+                    totalBytesRead += segmentSize;
+//                    System.out.println("SEGMENT #" + i++ + new String(buffer, StandardCharsets.UTF_8));
+                    if (segmentSize > 0){
+                        fileOutputStream.write(buffer, 0, segmentSize);
                         fileOutputStream.flush();
                     }
+//                    buffer = buffer.clear();
                     currentTime = System.currentTimeMillis();
                     if (currentTime - lastSpeedMeasureTime > TIME_MEASURE_INTERVAL){
 
-                        System.out.println("Uploading " + newFile + ":\n"
-                                + ANSI_GREEN + "Instant speed: " + bytesRead * 1000 / (currentTime - lastSpeedMeasureTime) + "Byte/sec" + ANSI_RESET
-                                + ANSI_CYAN + "Average speed" + totalBytesRead * 1000 / (currentTime - uploadStartedTime) + "Byte/sec" + ANSI_RESET);
-
+                        System.out.println("Uploading " + newFile.getFileName() + ":\n"
+                                + ANSI_GREEN + "Instant speed: " + readSinceLastTimeMeasure * 1000 / (currentTime - lastSpeedMeasureTime) + " Byte/sec\n" + ANSI_RESET
+                                + ANSI_CYAN + "Average speed: " + totalBytesRead * 1000 / (currentTime - uploadStartedTime) + " Byte/sec" + ANSI_RESET);
+                        readSinceLastTimeMeasure = 0;
                         lastSpeedMeasureTime = currentTime;
                     }
                 }
@@ -95,6 +104,7 @@ public class FileTransporter implements Runnable {
                 }
                 if (totalBytesRead == fileSize){
                     outputStream.sendInt(SUCCESSFUL_FILE_TRANSFER);
+                    System.out.println("Finished uploading " + newFile.getFileName());
                 } else {
                     outputStream.sendInt(FILE_TRANSFER_FAILURE);
                 }
@@ -108,3 +118,4 @@ public class FileTransporter implements Runnable {
         }
     }
 }
+

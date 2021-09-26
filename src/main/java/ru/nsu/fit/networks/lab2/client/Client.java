@@ -5,10 +5,12 @@ import ru.nsu.fit.networks.lab2.smartsocket.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import static ru.nsu.fit.networks.lab2.util.Protocol.*;
 
@@ -30,9 +32,15 @@ public class Client implements Runnable {
 
     private void UploadFile(FileInputStream fileInputStream, MyOutputStream socketOutputStream) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
+//        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+        int i = 0;
         int segmentSize;
         while ((segmentSize = fileInputStream.read(buffer, 0, BUFFER_SIZE)) != -1){
-//            socketOutputStream.writeInt(segmentSize);
+            byte[] segment = new byte[segmentSize];
+//            System.arraycopy(buffer.array(), 0, segment, 0, );
+            socketOutputStream.sendInt(segmentSize);
+//            System.out.println("sending" + segmentSize + "bytes");
+//            System.out.println("SEGMENT #" + i++ + new String(buffer, StandardCharsets.UTF_8));
             socketOutputStream.send(buffer, segmentSize);
             socketOutputStream.flush();
         }
@@ -83,3 +91,4 @@ public class Client implements Runnable {
         }
     }
 }
+
