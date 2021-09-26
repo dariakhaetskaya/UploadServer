@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static ru.nsu.fit.networks.lab2.util.Utils.*;
+import static ru.nsu.fit.networks.lab2.util.Protocol.*;
 
 public class Client implements Runnable {
     private final File file;
@@ -51,11 +51,10 @@ public class Client implements Runnable {
             socketOutputStream.write(fileName);
             socketOutputStream.writeInt(fileName.length);
 
-
             UploadFile(fileInputStream, socketOutputStream);
             fileInputStream.close();
-            socket.shutdownOutput();
             socketOutputStream.close();
+            socket.shutdownOutput();
 
             int transferStatus = socketInputStream.readInt();
             if (transferStatus == FILE_TRANSFER_FAILURE){
@@ -63,6 +62,8 @@ public class Client implements Runnable {
             } else if (transferStatus == SUCCESSFUL_FILE_TRANSFER) {
                 System.out.println("FILE TRANSFERRED SUCCESSFULLY");
             }
+
+            socketInputStream.close();
             socket.shutdownInput();
         } catch (IOException e) {
             e.printStackTrace();

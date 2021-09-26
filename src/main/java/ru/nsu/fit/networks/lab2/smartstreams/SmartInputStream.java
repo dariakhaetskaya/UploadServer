@@ -3,11 +3,10 @@ package ru.nsu.fit.networks.lab2.smartstreams;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ProtocolException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 
-import static ru.nsu.fit.networks.lab2.util.Utils.INT_SIZE_BYTES;
+import static ru.nsu.fit.networks.lab2.util.Protocol.INT_SIZE_BYTES;
 
 public class SmartInputStream extends BufferedInputStream {
 
@@ -21,5 +20,13 @@ public class SmartInputStream extends BufferedInputStream {
             throw new IOException("failed to read INT");
         }
         return ByteBuffer.wrap(buffer).getInt();
+    }
+
+    public String readStringUTF8(int length) throws IOException {
+        byte[] buffer = new byte[length];
+        if (this.read(buffer, 0, length) != length){
+            throw new IOException("Failed to read client's file name");
+        }
+        return new String(buffer, StandardCharsets.UTF_8);
     }
 }

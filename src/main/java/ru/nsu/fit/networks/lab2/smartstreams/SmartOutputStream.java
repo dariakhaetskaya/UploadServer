@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import static ru.nsu.fit.networks.lab2.util.Utils.INT_SIZE_BYTES;
+import static ru.nsu.fit.networks.lab2.util.Protocol.INT_SIZE_BYTES;
 
 public class SmartOutputStream extends BufferedOutputStream {
 
