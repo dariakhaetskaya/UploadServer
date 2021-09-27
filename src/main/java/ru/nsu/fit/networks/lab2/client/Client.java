@@ -5,12 +5,10 @@ import ru.nsu.fit.networks.lab2.smartsocket.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 import static ru.nsu.fit.networks.lab2.util.Protocol.*;
 
@@ -32,19 +30,12 @@ public class Client implements Runnable {
 
     private void UploadFile(FileInputStream fileInputStream, MyOutputStream socketOutputStream) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
-//        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-        int i = 0;
-        int segmentSize;
+        int segmentSize; // size of an individual piece of data that can be less than size of the buffer
         while ((segmentSize = fileInputStream.read(buffer, 0, BUFFER_SIZE)) != -1){
-            byte[] segment = new byte[segmentSize];
-//            System.arraycopy(buffer.array(), 0, segment, 0, );
             socketOutputStream.sendInt(segmentSize);
-//            System.out.println("sending" + segmentSize + "bytes");
-//            System.out.println("SEGMENT #" + i++ + new String(buffer, StandardCharsets.UTF_8));
             socketOutputStream.send(buffer, segmentSize);
             socketOutputStream.flush();
         }
-
     }
 
     @Override
@@ -54,26 +45,29 @@ public class Client implements Runnable {
             MyInputStream inputStream = new MyInputStream(socket.getInputStream());
             FileInputStream fileInputStream = new FileInputStream(file)){
 
+            // get the filename, send its length and then the name itself
             String fileName = file.getName();
-//            byte[] fileNameSize = ByteBuffer.allocate(INT_SIZE_BYTES).putInt(fileName.length).array();
             outputSteam.sendInt(fileName.getBytes(StandardCharsets.UTF_8).length);
             outputSteam.sendUTF(fileName);
-            System.out.println("sending: " + fileName);
+            System.out.println("Uploading: " + fileName);
 
-
+            // if length that we send differs from the one we've got, it's an error
             if (inputStream.readInt() != SUCCESSFUL_FILENAME_TRANSFER){
                 System.err.println("Error transferring filename");
                 fileInputStream.close();
                 outputSteam.close();
-                socket.shutdownOutput();
+                socket.close();
                 return;
             }
 
+            // send file size to the server
             long fileSize = Files.size(path);
             outputSteam.sendLong(fileSize);
 
             UploadFile(fileInputStream, outputSteam);
+            fileInputStream.close();
 
+            // get server's response weather the transfer was successful or not
             int transferStatus = inputStream.readInt();
             if (transferStatus == FILE_TRANSFER_FAILURE){
                 System.out.println("FILE TRANSFER FAILED");
@@ -81,10 +75,7 @@ public class Client implements Runnable {
                 System.out.println("FILE TRANSFERRED SUCCESSFULLY");
             }
 
-//            fileInputStream.close();
-//            socketOutputStream.close();
             socket.shutdownOutput();
-//            socketInputStream.close();
             socket.shutdownInput();
         } catch (IOException e) {
             e.printStackTrace();

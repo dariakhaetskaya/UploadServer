@@ -6,7 +6,8 @@ import java.net.InetAddress;
 public class ClientMain {
     public static void main(String[] args) throws IOException{
         if (args.length != 3){
-            throw new IllegalArgumentException("Expected 3 arguments, got " + args.length);
+            throw new IllegalArgumentException("Expected 3 arguments, got " + args.length
+            + "\n" + "Arguments: [filename] [hostname] [port]");
         }
 
         String fileName = args[0];
