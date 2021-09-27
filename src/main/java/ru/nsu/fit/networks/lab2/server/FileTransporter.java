@@ -1,11 +1,10 @@
 package ru.nsu.fit.networks.lab2.server;
 
-import ru.nsu.fit.networks.lab2.smartsocket.MyInputStream;
-import ru.nsu.fit.networks.lab2.smartsocket.MyOutputStream;
+import ru.nsu.fit.networks.lab2.mystreams.MyInputStream;
+import ru.nsu.fit.networks.lab2.mystreams.MyOutputStream;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;

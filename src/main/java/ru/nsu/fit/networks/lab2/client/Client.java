@@ -1,6 +1,6 @@
 package ru.nsu.fit.networks.lab2.client;
 
-import ru.nsu.fit.networks.lab2.smartsocket.*;
+import ru.nsu.fit.networks.lab2.mystreams.*;
 
 import java.io.*;
 import java.net.InetAddress;

@@ -1,4 +1,4 @@
-package ru.nsu.fit.networks.lab2.smartsocket;
+package ru.nsu.fit.networks.lab2.mystreams;
 
 import java.io.*;
 import java.nio.ByteBuffer;
